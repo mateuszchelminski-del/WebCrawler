@@ -2,6 +2,7 @@
 import os
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -284,8 +285,9 @@ class GuiCrawling(unittest.TestCase):
             time.sleep(0.05)
             if self.app.scanner and not self.app.scanner.is_alive() and not self.app.auto_on:
                 break
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
         self.assertGreater(len(self.app.rows), 10)
         self.assertGreaterEqual(self.app.graph.stats()["pages"], 5)
         self.assertTrue(any(b[0].endswith("/nope.html") for b in self.app.broken))
@@ -339,8 +341,9 @@ class GuiMonitoring(unittest.TestCase):
             time.sleep(0.03)
             if self.app.scanner and not self.app.scanner.is_alive() and not self.app.auto_on:
                 break
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
 
     def test_save_clear_open_restores_the_whole_session(self):
         self.scan()
@@ -386,8 +389,9 @@ class GuiMonitoring(unittest.TestCase):
         while time.time() < end and (self.app.auto_on or (self.app.scanner and self.app.scanner.is_alive())):
             self.app.update()
             time.sleep(0.03)
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
         self.assertIsNotNone(self.app.resume_state)
         self.assertEqual(self.app.auto_btn.cget("text"), "▶  Resume crawl")
         done = len(self.app.resume_state["visited"])
@@ -399,8 +403,9 @@ class GuiMonitoring(unittest.TestCase):
             time.sleep(0.03)
             if self.app.scanner and not self.app.scanner.is_alive() and not self.app.auto_on:
                 break
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
         self.assertIsNone(self.app.resume_state)
         self.assertEqual(self.app.auto_btn.cget("text"), "▶  Start crawl")
         chain = {p: n for p, n in self.srv.hits.items() if p.startswith("/chain/")}
@@ -458,8 +463,9 @@ class GuiMonitoring(unittest.TestCase):
     def test_site_tab_lists_probes_sitemap_and_findings(self):
         self.scan(probe_files=True)
         self.app.nb.select(3)
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
         rows = [self.app.site_tv.item(i, "values") for i in self.app.site_tv.get_children()]
         kinds = {r[0] for r in rows}
         self.assertTrue({"File", "Sitemap", "robots.txt", "Finding"} <= kinds, kinds)
@@ -474,8 +480,9 @@ class GuiMonitoring(unittest.TestCase):
         self.app.info.add_host("old.example.com", "link", "example.com")
         self.app.info.hosts["old.example.com"]["addresses"] = []
         self.app.nb.select(4)
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
         rows = [self.app.inputs_tv.item(i, "values") for i in self.app.inputs_tv.get_children()]
         self.assertTrue(any(r[0] == "Form" and r[1].startswith("POST") and r[1].endswith("/login") and "password" in r[3] for r in rows), rows)
         self.assertTrue(any(r[0] == "Form" and r[1].startswith("GET") and "search" in r[3] for r in rows))
@@ -488,8 +495,9 @@ class GuiMonitoring(unittest.TestCase):
         rep.findings.append(g.analysis.Finding("email-no-dmarc", "medium", "No DMARC record", "x"))
         self.app.info.add_dns(rep)
         self.app.nb.select(3)
-        for _ in range(10):
+        for _ in range(40):                     # the window shows events on a 100 ms timer: give it time to catch up
             self.app.update()
+            time.sleep(0.03)
         rows = [self.app.site_tv.item(i, "values") for i in self.app.site_tv.get_children()]
         self.assertTrue(any(r[0] == "DNS" and r[1] == "SPF" and "v=spf1 -all" in r[2] for r in rows), rows)
         self.assertTrue(any(r[0] == "DNS" and r[1] == "DMARC" and r[2] == "none" for r in rows))

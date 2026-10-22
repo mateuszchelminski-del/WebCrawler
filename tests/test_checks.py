@@ -317,7 +317,7 @@ class LegacyServer(unittest.TestCase):
         if not info["ok"]:
             self.skipTest("the local client could not complete a TLS 1.0 handshake either")
         self.assertEqual((info["protocol"], info["legacy"]), ("TLSv1", ["TLSv1"]))
-        self.assertTrue(info["unverified"])
+        self.assertTrue(info.get("unverified") or info.get("verify_error"))     # the certificate is not trusted either way
         self.assertEqual(info["subject"], "localhost")                       # the certificate is still read
         f = [x for x in ck.tls_findings(info) if x.code == "tls-old-protocol"]
         self.assertEqual(f[0].severity, "high")

@@ -340,7 +340,7 @@ class QuickScanner(threading.Thread):
                     for f in done:
                         item = pending.pop(f)
                         try:
-                            self._handle(*f.result())
+                            self._process(*f.result())
                         except Exception as e:  # one bad page must not stop the crawl
                             self.errors += 1
                             self.emit("status", f"Skipped a page after an internal error: {e}")
@@ -348,7 +348,7 @@ class QuickScanner(threading.Thread):
                 for f in list(pending):  # let in-flight requests finish (bounded by the timeout)
                     item = pending.pop(f)
                     try:
-                        self._handle(*f.result(timeout=self.opts.timeout * 3 + 5))
+                        self._process(*f.result(timeout=self.opts.timeout * 3 + 5))
                     except Exception:
                         pass
                 if self.opts.check_external and not self.stop_event.is_set() and not limit_hit:
@@ -356,7 +356,7 @@ class QuickScanner(threading.Thread):
         finally:
             self._finish(limit_hit)
 
-    def _handle(self, url: str, depth: int, parent: str | None, r: "Fetched", parsed, rendered=None) -> None:
+    def _process(self, url: str, depth: int, parent: str | None, r: "Fetched", parsed, rendered=None) -> None:
         if r.error == "stopped":
             self.frontier.visited.discard(fr.normalize(url))  # never fetched: put it back so a resume does it
             self.frontier.push(url, depth, parent)

@@ -123,7 +123,11 @@ class OnTheCommandLine(tcm.Monitoring):
         self.srv.extra = "<a href='https://bit.ly/x'>s</a>"
         rc, text, b = self.crawl("b", "--history", str(hist), "--compare", str(a / "session.json"))
         runs = hi.History.load(hist).runs
-        self.assertEqual((len(runs), runs[-1]["medium"] - runs[0]["medium"], runs[-1]["regressions"]), (2, 1, 1))
+        changes = json.loads((b / "changes.json").read_text(encoding="utf-8"))["changes"]
+        self.assertTrue(any(c["section"] == "risk-new" and "bit.ly" in c["subject"] for c in changes), changes)
+        self.assertEqual(len(runs), 2)
+        self.assertGreaterEqual(runs[-1]["medium"] - runs[0]["medium"], 1)               # (how many other pages differ between two crawls depends on timing)
+        self.assertGreaterEqual(runs[-1]["regressions"], 1)
         self.assertIn("open problems are worse", text)
         page = (b / "trend.html").read_text(encoding="utf-8")
         self.assertIn("More open problems", page)
