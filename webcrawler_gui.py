@@ -1693,6 +1693,10 @@ class App(tk.Tk):
         self.engine.send("quit")
         self.engine.join(timeout=4)
         self.destroy()
+        # Tk variables and images that are still around are cleaned up by whichever thread happens to run the garbage collector, and a Tcl call
+        # from a thread other than the main one blocks for a second ("main thread is not in main loop"): collect them here, on the main thread
+        import gc
+        gc.collect()
 
 
 def _dpi_aware() -> None:

@@ -222,7 +222,7 @@ class Rendering(unittest.TestCase):
 
     def test_always_renders_even_a_static_page(self):
         s, ev, store, *_ = scan(self.base + "/ssr", depth=0, render="always")
-        self.assertEqual(s.summary["rendered"], 1)
+        self.assertEqual(s.summary["rendered"], 1, [e[1] for e in ev if e[0] == "status"])
         self.assertEqual(len(store.all()), 12)
 
     def test_the_render_budget_is_respected(self):
