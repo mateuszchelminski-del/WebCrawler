@@ -288,7 +288,10 @@ class QuickScanner(threading.Thread):
                 self.renderer = render_mod.Renderer(self.opts.user_agent, self.opts.verify_tls, self.auth, self.start_url, self.opts.scope,
                                                     timeout=self.opts.timeout, emit=self.emit)
         res = self.renderer.render(final, self.stop_event)
+        if res.error and "imeout" in res.error and not self.stop_event.is_set():
+            res = self.renderer.render(final, self.stop_event)            # the first page a cold browser opens can be slow: one more try
         if res.error:
+            self.emit("status", f"Could not render {final} ({res.error}); using the page as it was served")
             return None
         res.why = why
         return res

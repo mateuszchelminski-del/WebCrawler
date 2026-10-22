@@ -205,7 +205,7 @@ class Rendering(unittest.TestCase):
 
     def test_content_fetched_or_added_late_is_waited_for(self):
         s, ev, store, *_ = scan(self.base + "/lazy", depth=0, render="auto")
-        self.assertEqual(hrefs(store, self.base), {"/lazy/1", "/lazy/2", "/lazy/3"})
+        self.assertEqual(hrefs(store, self.base), {"/lazy/1", "/lazy/2", "/lazy/3"}, [e[1] for e in ev if e[0] == "status"])
         s, ev, store, *_ = scan(self.base + "/delayed", depth=0, render="auto")
         self.assertEqual(hrefs(store, self.base), {"/late/1"})
 
