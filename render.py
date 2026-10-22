@@ -96,6 +96,7 @@ class Renderer:
         self.rendered = 0
         self._lock = threading.Lock()
         self._closing = False
+        self.trace: list[str] = []               # the last steps of the render thread, shown if a render never finishes
 
     # ---------------------------------------------------------------- public
     def render(self, url: str, stop: threading.Event | None = None) -> Rendered:
@@ -115,7 +116,7 @@ class Renderer:
             except queue.Empty:
                 if (stop is not None and stop.is_set()) or self._closing or (self.thread and not self.thread.is_alive()):
                     break
-        return Rendered(url, error=self.unavailable or "rendering did not finish")
+        return Rendered(url, error=self.unavailable or "rendering did not finish (last steps: " + ", ".join(self.trace[-6:]) + ")")
 
     def close(self) -> None:
         self._closing = True
@@ -142,6 +143,7 @@ class Renderer:
                     self.emit("status", self.unavailable)
                     self._drain_with_error()
                     return
+                self._step("browser started")
                 try:
                     auth_mod.install_login(ctx, self.auth, self.start, self.scope, block=("image", "media", "font"))
                     self.emit("status", f"Rendering script-heavy pages in headless {name}.")
@@ -163,6 +165,10 @@ class Renderer:
             self.emit("status", self.unavailable)
             self._drain_with_error()
 
+    def _step(self, what: str) -> None:
+        self.trace.append(f"{time.monotonic() % 1000:.1f}s {what}")
+        del self.trace[:-20]
+
     def _drain_with_error(self) -> None:
         while True:
             try:
@@ -177,13 +183,16 @@ class Renderer:
         out = Rendered(url)
         page = None
         try:
+            self._step("new page")
             page = ctx.new_page()
+            self._step("goto")
             resp = page.goto(url, wait_until="domcontentloaded", timeout=int(self.timeout * 1000))
             out.status = resp.status if resp else 0
             try:
                 page.wait_for_load_state("networkidle", timeout=4000)     # best effort: some pages poll forever
             except PWError:
                 pass
+            self._step("loaded, scrolling")
             last = -1
             for _ in range(self.max_scrolls):                              # trigger lazy loading and infinite scroll
                 h = page.evaluate(HEIGHT_JS)
@@ -191,12 +200,14 @@ class Renderer:
                 if h == last:
                     break
                 last = h
+            self._step("waiting for the page to hold still")
             prev, calm, t1 = None, 0, time.monotonic()
-            while time.monotonic() - t1 < 3.0 and calm < 3:               # a timer may still be about to add content: wait until the page holds still
+            while time.monotonic() - t1 < 2.5 and calm < 3:               # a timer may still be about to add content: wait until the page holds still
                 now = page.evaluate("document.getElementsByTagName('a').length + ':' + (document.body ? document.body.innerHTML.length : 0)")
                 calm = calm + 1 if now == prev else 0
                 prev = now
                 page.wait_for_timeout(300)
+            self._step("collecting")
             data = page.evaluate(COLLECT_JS)
             out.links, out.base = data["links"], data["base"]
             out.final_url = page.url
