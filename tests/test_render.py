@@ -176,6 +176,7 @@ class Rendering(unittest.TestCase):
     def setUpClass(cls):
         cls.srv = serve()
         cls.base = cls.srv.base
+        scan(cls.base + "/lazy", depth=0, render="always", wait=90)        # warm up: the first start of a browser on a cold CI machine can take very long
 
     @classmethod
     def tearDownClass(cls):
