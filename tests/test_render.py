@@ -159,7 +159,12 @@ def scan(start, wait=120, auth_cfg=None, stop_after=None, **kw):
     if stop_after:
         time.sleep(stop_after)
         s.stop()
-    s.join(wait)
+    import faulthandler
+    faulthandler.dump_traceback_later(45, exit=False)            # a render that hangs shows where every thread is waiting
+    try:
+        s.join(wait)
+    finally:
+        faulthandler.cancel_dump_traceback_later()
     events = []
     while not ev.empty():
         events.append(ev.get())
