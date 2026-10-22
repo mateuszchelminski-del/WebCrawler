@@ -11,6 +11,8 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _net  # noqa: E402,F401  (a longer listen backlog for the local test servers)
 import analysis as an  # noqa: E402
 import auth  # noqa: E402
 import checks as ck  # noqa: E402

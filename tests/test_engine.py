@@ -11,6 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _net  # noqa: E402,F401  (a longer listen backlog for the local test servers)
 from test_webcrawler import _have_browser  # noqa: E402
 
 import engine as eng  # noqa: E402

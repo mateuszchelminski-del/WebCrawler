@@ -9,6 +9,8 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import _net  # noqa: E402,F401  (a longer listen backlog for the local test servers)
 import checks as ck  # noqa: E402
 import dnscheck as dn  # noqa: E402
 import frontier as fr  # noqa: E402

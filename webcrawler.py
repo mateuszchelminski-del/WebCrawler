@@ -75,7 +75,10 @@ def serve_local(file_url: str):
     root, name = (path, "") if path.is_dir() else (path.parent, path.name)
     handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(root))
     handler.log_message = lambda *a, **k: None
-    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    class Server(http.server.ThreadingHTTPServer):
+        request_queue_size = 128            # parallel connections from the scanner must not overflow the default backlog of 5
+
+    srv = Server(("127.0.0.1", 0), handler)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return f"http://127.0.0.1:{srv.server_address[1]}/{name}", srv
 

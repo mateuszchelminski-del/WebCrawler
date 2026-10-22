@@ -191,6 +191,12 @@ class Renderer:
                 if h == last:
                     break
                 last = h
+            prev, calm, t1 = None, 0, time.monotonic()
+            while time.monotonic() - t1 < 3.0 and calm < 3:               # a timer may still be about to add content: wait until the page holds still
+                now = page.evaluate("document.getElementsByTagName('a').length + ':' + (document.body ? document.body.innerHTML.length : 0)")
+                calm = calm + 1 if now == prev else 0
+                prev = now
+                page.wait_for_timeout(300)
             data = page.evaluate(COLLECT_JS)
             out.links, out.base = data["links"], data["base"]
             out.final_url = page.url
