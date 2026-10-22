@@ -965,7 +965,11 @@ class App(tk.Tk):
     def _poll(self) -> None:
         try:
             for _ in range(400):
-                self._handle(self.engine.events.get_nowait())
+                ev = self.engine.events.get_nowait()
+                try:
+                    self._handle(ev)
+                except Exception as e:      # one bad event must not stop the window listening to the crawl
+                    self._log(f"Could not show an event ({ev[0]}): {e}", status=False)
         except queue.Empty:
             pass
         if self.info.version != self._info_ver:
@@ -1053,8 +1057,11 @@ class App(tk.Tk):
 
     def _insert_row(self, link, findings, score) -> None:
         rating = analysis.rating(score)
-        self.tv.insert("", "end", iid=str(link.n), values=(link.n, rating if rating != "none" else "", link.kind, link.href, link.text or "", link.page),
-                       tags=(rating,) if rating != "none" else ())
+        values = (link.n, rating if rating != "none" else "", link.kind, link.href, link.text or "", link.page)
+        if self.tv.exists(str(link.n)):                      # already shown (a refill and a new event can meet): update it, do not fail
+            self.tv.item(str(link.n), values=values, tags=(rating,) if rating != "none" else ())
+            return
+        self.tv.insert("", "end", iid=str(link.n), values=values, tags=(rating,) if rating != "none" else ())
 
     def _refill(self) -> None:
         self.tv.delete(*self.tv.get_children())

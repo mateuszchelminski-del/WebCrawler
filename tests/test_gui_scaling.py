@@ -70,7 +70,7 @@ class Scaling(unittest.TestCase):
                 self.assertLessEqual(w, sw * 0.90 + 1, name)
                 self.assertLessEqual(h, sh * 0.90 + 1, name)
                 self.assertGreaterEqual((x, y), (0, 0), name)
-                self.assertAlmostEqual(g.UI, scaling / (96 / 72), places=2)
+                self.assertAlmostEqual(g.UI, scaling / (96 / 72), delta=0.03)       # Tk rounds the scaling a little
                 minw, minh = a.minsize()
                 self.assertLessEqual((minw, minh), (sw * 0.85 + 1, sh * 0.85 + 1), name)
                 self.assertLessEqual(minw, w)

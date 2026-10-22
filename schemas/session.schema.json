@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mateuszchelminski-del/WebCrawler/schemas/session.schema.json",
+  "title": "WebCrawler session",
+  "description": "Everything a crawl learned, as written by --save, --monitor and the GUI's Save session (session.json). Unknown extra keys may appear in later versions and should be ignored. Credentials are never part of a session.",
+  "type": "object",
+  "required": ["format", "version", "created", "start", "options", "links", "pages", "broken", "graph", "site"],
+  "properties": {
+    "format": {"const": "webcrawler-session"},
+    "version": {"type": "integer", "minimum": 1},
+    "created": {"type": "string", "description": "UTC time the session was written, YYYY-MM-DDTHH:MM:SSZ"},
+    "start": {"type": "string", "description": "the address the crawl began at"},
+    "options": {"type": "object", "description": "the CrawlOptions used: depth, max_pages, delays, scope, check_* switches...", "properties": {
+      "depth": {"type": "integer"}, "max_pages": {"type": "integer"}, "scope": {"enum": ["host", "subdomains", "any"]}, "strategy": {"enum": ["bfs", "dfs"]},
+      "user_agent": {"type": "string"}, "render": {"enum": ["auto", "never", "always"]}}},
+    "links": {"type": "array", "items": {"$ref": "#/$defs/link"}},
+    "pages": {"type": "array", "description": "the response-header audit of each page that was fetched", "items": {"$ref": "#/$defs/page"}},
+    "broken": {"type": "array", "description": "[url, status (0 = no answer), linked-from, reason]", "items": {"type": "array", "prefixItems": [
+      {"type": "string"}, {"type": "integer"}, {"type": "string"}, {"type": "string"}], "minItems": 4, "maxItems": 4}},
+    "graph": {"type": "object", "required": ["root", "nodes", "edges"], "properties": {
+      "root": {"type": "string"}, "sources": {"type": "array", "items": {"type": "string"}},
+      "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+      "edges": {"type": "array", "description": "[from, to, how many links]", "items": {"type": "array", "prefixItems": [{"type": "string"}, {"type": "string"}, {"type": "integer"}], "minItems": 3, "maxItems": 3}}}},
+    "site": {"$ref": "#/$defs/site"},
+    "resume": {"type": ["object", "null"], "description": "present when the crawl stopped early: the queue to carry on from"}
+  },
+  "$defs": {
+    "severity": {"enum": ["high", "medium", "low", "info"]},
+    "finding": {"type": "object", "required": ["code", "severity", "title"], "properties": {
+      "code": {"type": "string", "description": "the rule id, explained in docs/CHECKS.md"}, "severity": {"$ref": "#/$defs/severity"}, "title": {"type": "string"}, "detail": {"type": "string"}}},
+    "link": {"type": "object", "required": ["n", "href", "kind", "page"], "properties": {
+      "n": {"type": "integer"}, "href": {"type": "string"}, "text": {"type": "string"},
+      "kind": {"enum": ["internal", "external", "anchor", "mailto", "tel", "file", "other"]}, "host": {"type": "string"}, "count": {"type": "integer"}, "nofollow": {"type": "boolean"},
+      "page": {"type": "string", "description": "the page the link was found on"}}},
+    "page": {"type": "object", "required": ["url", "status", "findings"], "properties": {
+      "url": {"type": "string"}, "status": {"type": "integer"}, "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}}, "headers": {"type": "object", "additionalProperties": {"type": "string"}}}},
+    "node": {"type": "object", "required": ["url", "kind"], "properties": {
+      "url": {"type": "string"}, "kind": {"type": "string"}, "label": {"type": "string"}, "depth": {"type": ["integer", "null"]}, "status": {"type": ["integer", "null"]},
+      "title": {"type": "string"}, "visited": {"type": "boolean"}, "risk": {"type": "integer"}, "count": {"type": "integer"}, "rendered": {"type": "boolean"},
+      "fp": {"type": ["string", "null"], "description": "SimHash of the page's visible text (16 hex digits), used to notice content changes"}, "words": {"type": "integer"}}},
+    "site": {"type": "object", "description": "what was learned about the site as a whole", "properties": {
+      "tls": {"type": "object", "additionalProperties": {"type": "object", "properties": {"host": {"type": "string"}, "ok": {"type": "boolean"}, "verified": {"type": "boolean"},
+        "protocol": {"type": "string"}, "issuer": {"type": "string"}, "not_after": {"type": "string"}, "days_left": {"type": ["integer", "null"]}, "san": {"type": "array", "items": {"type": "string"}}}}},
+      "tech": {"type": "array", "items": {"type": "object", "required": ["name"], "properties": {"name": {"type": "string"}, "version": {"type": "string"}, "category": {"type": "string"}, "evidence": {"type": "string"}, "url": {"type": "string"}}}},
+      "files": {"type": "array", "items": {"type": "object", "properties": {"path": {"type": "string"}, "exposed": {"type": "boolean"}, "severity": {"$ref": "#/$defs/severity"}, "title": {"type": "string"}, "status": {"type": "integer"}}}},
+      "seeds": {"type": "object"},
+      "findings": {"type": "array", "items": {"allOf": [{"$ref": "#/$defs/finding"}, {"type": "object", "properties": {"where": {"type": "string"}}}]}},
+      "forms": {"type": "array", "items": {"type": "object", "required": ["action", "method", "fields"], "properties": {
+        "page": {"type": "string"}, "action": {"type": "string"}, "method": {"enum": ["get", "post"]}, "enctype": {"type": "string"}, "password": {"type": "boolean"}, "upload": {"type": "boolean"},
+        "csrf": {"type": "boolean"}, "search": {"type": "boolean"}, "cross_origin": {"type": "boolean"}, "id": {"type": "string"},
+        "fields": {"type": "array", "items": {"type": "object", "required": ["name", "type"], "properties": {"name": {"type": "string"}, "type": {"type": "string"}, "required": {"type": "boolean"}}}}}}},
+      "params": {"type": "object", "description": "URL query parameter name -> how often it was seen", "additionalProperties": {"type": "object", "required": ["count"], "properties": {"count": {"type": "integer"}, "examples": {"type": "array", "items": {"type": "string"}}}}},
+      "hosts": {"type": "object", "description": "host names of the site's domain that it refers to", "additionalProperties": {"type": "object", "properties": {
+        "sources": {"type": "array", "items": {"type": "string"}}, "addresses": {"type": ["array", "null"], "items": {"type": "string"}}}}},
+      "dns": {"type": "object", "description": "SPF, DMARC, CAA and DNSSEC records (only with --dns)", "properties": {
+        "domain": {"type": "string"}, "ns": {"type": "array", "items": {"type": "string"}}, "mx": {"type": "array", "items": {"type": "string"}}, "spf": {"type": "string"}, "spf_lookups": {"type": "integer"},
+        "dmarc": {"type": "string"}, "dkim": {"type": "array", "items": {"type": "string"}}, "mta_sts": {"type": "boolean"}, "tls_rpt": {"type": "boolean"}, "caa": {"type": "array", "items": {"type": "string"}}, "dnssec": {"type": "boolean"}}},
+      "scripts": {"type": "object", "description": "third-party hosts that pages load scripts from", "additionalProperties": {"type": "object", "properties": {"count": {"type": "integer"}, "pages": {"type": "array", "items": {"type": "string"}}}}}}}
+  }
+}

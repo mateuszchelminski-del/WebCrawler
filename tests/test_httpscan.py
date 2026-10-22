@@ -196,8 +196,13 @@ class Scanning(unittest.TestCase):
         self.assertGreaterEqual(time.time() - t, 0.25 * (s.pages - 1) - 0.1)
 
     def test_concurrency_is_faster_than_one_at_a_time(self):
-        _, _, _, _, fast = scan(self.base + "/slowroot", depth=1, concurrency=8)
-        _, _, _, _, slow = scan(self.base + "/slowroot", depth=1, concurrency=1)
+        import faulthandler
+        faulthandler.dump_traceback_later(50, exit=False)           # if a scan ever hangs, the log shows where every thread is
+        try:
+            _, _, _, _, fast = scan(self.base + "/slowroot", depth=1, concurrency=8)
+            _, _, _, _, slow = scan(self.base + "/slowroot", depth=1, concurrency=1)
+        finally:
+            faulthandler.cancel_dump_traceback_later()
         self.assertLess(fast, slow * 0.6, (fast, slow))
 
     def test_stop_ends_quickly(self):
