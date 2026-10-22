@@ -10,3 +10,4 @@ webcrawler-gui-error.log
 tests/fixtures/sarif-schema-2.1.0.json
 .idea/
 .vscode/
+.wsl-run.sh
