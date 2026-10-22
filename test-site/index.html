@@ -1,0 +1,17 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Crawler test site</title><style>body{font:16px system-ui;margin:0;padding:0 24px}section{min-height:900px;border-bottom:1px dashed #bbb;padding-top:24px}nav a{margin-right:14px}</style></head><body>
+<nav><a href="about.html">About</a><a href="deep/page.html">Deep page</a></nav>
+<h1>Crawler test site</h1>
+<section id="top"><p>Tall sections force scrolling, so links further down only appear once the page is scrolled.</p>
+  <p><a href="about.html">About us again (duplicate link)</a></p></section>
+<section><p><a href="mailto:hello@test.example">Email us</a> · <a href="tel:+15555550100">Call us</a> · <a href="files/report.pdf">Annual report (PDF)</a></p>
+  <p><a href="javascript:void(0)">A javascript: link (not a real link)</a> · <a href="nope.html">A broken internal link</a></p>
+  <p><a href="hidden.html" style="display:none">A hidden link nobody can see</a></p></section>
+<section><p><a href="https://example.org/">An external site</a> · <a href="https://partner.test.example/offer" rel="sponsored nofollow">A nofollow partner</a></p>
+  <p><a href="private/secret.html">A page robots.txt forbids following</a></p></section>
+<section><h2>Links for the security analyser</h2>
+  <p><a href="http://203.0.113.9/login">A raw IP address, over HTTP</a></p>
+  <p><a href="https://bit.ly/3demo">A shortened link</a> · <a href="https://paypal.com@evil.test/signin">A user@host trick</a> · <a href="https://xn--pple-43d.com/">A punycode lookalike</a></p>
+  <p><a href="https://example.org/out?next=https://evil.test/">A redirect parameter</a> · <a href="https://update.zip/installer">A .zip domain</a></p>
+  <p><a href="private/admin/">An admin panel</a> · <a href="private/.git/config">An exposed .git folder</a> · <a href="private/backup/db.sql">A database dump</a> · <a href="private/setup.exe">An installer</a></p></section>
+<section id="bottom"><p><a href="#top">Back to top (anchor)</a> · <a href="late.html">A link at the very bottom</a></p></section>
+</body></html>

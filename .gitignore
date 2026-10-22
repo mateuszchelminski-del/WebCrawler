@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+crawl-results/
+monitor/
+session*.json
+webcrawler-gui-error.log
+tests/fixtures/sarif-schema-2.1.0.json
+.idea/
+.vscode/

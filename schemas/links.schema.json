@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mateuszchelminski-del/WebCrawler/schemas/links.schema.json",
+  "title": "WebCrawler links export",
+  "description": "links.json: every unique link the crawl captured, with a risk rating.",
+  "type": "object",
+  "required": ["start", "count", "links"],
+  "properties": {
+    "start": {"type": "string"},
+    "count": {"type": "integer", "minimum": 0},
+    "links": {"type": "array", "items": {
+      "type": "object",
+      "required": ["n", "href", "kind", "page", "risk", "risk_score", "findings"],
+      "properties": {
+        "n": {"type": "integer", "description": "capture order, starting at 1"},
+        "href": {"type": "string"},
+        "text": {"type": "string"},
+        "kind": {"enum": ["internal", "external", "anchor", "mailto", "tel", "file", "other"]},
+        "host": {"type": "string"},
+        "count": {"type": "integer", "description": "how many times the same address was seen"},
+        "nofollow": {"type": "boolean"},
+        "page": {"type": "string", "description": "the page it was first found on"},
+        "risk": {"enum": ["none", "low", "medium", "high"]},
+        "risk_score": {"type": "integer", "minimum": 0, "maximum": 100},
+        "findings": {"type": "array", "items": {"type": "object", "required": ["code", "severity", "title"], "properties": {
+          "code": {"type": "string"}, "severity": {"enum": ["high", "medium", "low", "info"]}, "title": {"type": "string"}, "detail": {"type": "string"}}}}
+      }
+    }}
+  }
+}

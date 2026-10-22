@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mateuszchelminski-del/WebCrawler/schemas/changes.schema.json",
+  "title": "WebCrawler comparison",
+  "description": "changes.json: what changed between two crawls (--compare, --diff, --monitor).",
+  "type": "object",
+  "required": ["old", "new", "summary", "changes"],
+  "properties": {
+    "old": {"$ref": "#/$defs/meta"},
+    "new": {"$ref": "#/$defs/meta"},
+    "summary": {"type": "string", "description": "one line, e.g. '1 regression(s), 2 new page(s), ...'"},
+    "suppressed": {"type": "integer", "description": "new findings left out because they are accepted"},
+    "changes": {"type": "array", "items": {
+      "type": "object",
+      "required": ["section", "subject", "severity"],
+      "properties": {
+        "section": {"enum": ["risk-new", "header-weaker", "site-new", "script-new", "status-changed", "page-changed", "page-added", "page-removed", "link-added", "link-removed",
+                             "tech-changed", "tls-changed", "dns-changed", "input-new", "input-removed", "host-changed", "risk-resolved", "header-improved", "site-resolved"],
+                    "description": "the kind of change; risk-new, header-weaker, site-new, script-new, status-changed and dns-changed are regressions"},
+        "subject": {"type": "string", "description": "the page, link, host or '<n> places' it is about"},
+        "detail": {"type": "string"},
+        "severity": {"enum": ["high", "medium", "low", "info"]},
+        "code": {"type": "string", "description": "the finding code, when the change is about a finding"},
+        "count": {"type": "integer", "minimum": 1, "description": "how many findings a grouped line stands for"}
+      }
+    }}
+  },
+  "$defs": {
+    "meta": {"type": "object", "properties": {"created": {"type": "string"}, "start": {"type": "string"}, "links": {"type": "integer"}, "pages": {"type": "integer"}}}
+  }
+}

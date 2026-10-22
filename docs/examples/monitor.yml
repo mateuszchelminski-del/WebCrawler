@@ -1,0 +1,94 @@
+# Watch a site you own, every day, and get told when it gets worse.
+#
+# Put this file in a PRIVATE repository at .github/workflows/monitor.yml (a private repository because the findings are a to-do list for
+# an attacker until you have fixed them). Then:
+#   1. change SITE below to your site;
+#   2. optionally add a repository secret WEBCRAWLER_WEBHOOK (a Slack / Discord / Teams incoming-webhook URL) to be messaged on regressions;
+#   3. run it once by hand (Actions > Monitor my site > Run workflow): that records the baseline. Later runs compare with the previous one.
+#
+# A failed run (red cross) means "something got worse"; the changes are in the run's artifacts, and, in a private repository, in an issue.
+# Only crawl sites you own or have permission to test.
+name: Monitor my site
+
+on:
+  schedule:
+    - cron: "17 3 * * *"        # every day at 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  SITE: https://example.com     # <- the site to watch
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: mateuszchelminski-del/WebCrawler
+          path: webcrawler
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The monitor folder (the previous sessions and the history) lives in the Actions cache between runs.
+      - name: Restore the previous crawls
+        uses: actions/cache/restore@v4
+        with:
+          path: monitor
+          key: monitor-${{ github.run_id }}
+          restore-keys: monitor-
+
+      # --dns and --subdomains look your domain up at Cloudflare's public DNS and at crt.sh (certificate logs); drop them if you would rather not.
+      - name: Crawl and compare
+        id: crawl
+        env:
+          WEBCRAWLER_WEBHOOK: ${{ secrets.WEBCRAWLER_WEBHOOK }}
+        run: >
+          python webcrawler/webcrawler.py "$SITE" --quick --depth 3 --max-pages 300
+          --dns --subdomains
+          --monitor monitor --keep 30 --fail-on-regression -q
+
+      - name: Keep the crawls for next time
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: monitor
+          key: monitor-${{ github.run_id }}
+
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-latest
+          path: monitor/latest
+          if-no-files-found: ignore
+          retention-days: 30
+
+      # Public repositories are skipped on purpose: an issue there would publish your open problems to everyone.
+      - name: Open an issue with what changed
+        if: failure() && github.event.repository.private
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = 'The scheduled crawl of ' + process.env.SITE + ' found regressions, or could not reach the site.\n\n';
+            try {
+              const c = JSON.parse(fs.readFileSync('monitor/latest/changes.json', 'utf8'));
+              const bad = new Set(['risk-new', 'header-weaker', 'site-new', 'status-changed', 'dns-changed', 'script-new']);
+              const rows = c.changes.filter(x => bad.has(x.section)).slice(0, 25)
+                .map(x => `[${x.severity.toUpperCase()}] ${x.subject}${x.detail ? ' - ' + x.detail : ''}`);
+              body += c.summary + '\n\n```\n' + rows.join('\n') + '\n```\n';
+            } catch (e) {
+              body += 'No comparison was produced (see the run log).\n';
+            }
+            body += '\nFull report: ' + `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              title: 'Site monitor: regressions on ' + process.env.SITE, body,
+            });

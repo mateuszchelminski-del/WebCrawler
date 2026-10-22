@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mateuszchelminski-del/WebCrawler/schemas/history.schema.json",
+  "title": "WebCrawler history",
+  "description": "history.json: one row of numbers per monitored crawl (the data behind trend.html).",
+  "type": "object",
+  "required": ["format", "runs"],
+  "properties": {
+    "format": {"const": "webcrawler-history"},
+    "version": {"type": "integer"},
+    "start": {"type": "string"},
+    "runs": {"type": "array", "maxItems": 1000, "items": {
+      "type": "object",
+      "required": ["created", "high", "medium", "low"],
+      "properties": {
+        "created": {"type": "string"},
+        "pages": {"type": "integer"}, "links": {"type": "integer"}, "broken": {"type": "integer"},
+        "high": {"type": "integer", "description": "open (not accepted) findings by severity"}, "medium": {"type": "integer"}, "low": {"type": "integer"},
+        "accepted": {"type": "integer"},
+        "regressions": {"type": "integer", "description": "compared with the previous crawl (absent for the first)"},
+        "new_pages": {"type": "integer"}, "removed_pages": {"type": "integer"}, "changed_pages": {"type": "integer"}, "fixed": {"type": "integer"}
+      }
+    }}
+  }
+}
